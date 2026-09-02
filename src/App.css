@@ -1,0 +1,295 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #04111f;
+  color: #edf5ff;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  background: #04111f;
+}
+
+/* =========================
+   SIDEBAR
+   ========================= */
+
+.sidebar {
+  width: 270px;
+  min-height: 100vh;
+  padding: 24px 16px;
+  background: #071a2d;
+  border-right: 1px solid #173a5d;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  overflow-y: auto;
+}
+
+.brand {
+  padding: 4px 12px 26px;
+}
+
+.brand-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.brand-subtitle {
+  margin-top: 4px;
+  color: #7f9ab5;
+  font-size: 13px;
+}
+
+.sidebar-section {
+  margin-bottom: 28px;
+}
+
+.section-title {
+  margin: 0 12px 9px;
+  color: #7f9ab5;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.sidebar-option,
+.nav-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #c7d8e8;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.sidebar-option {
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.sidebar-option:hover,
+.nav-item:hover {
+  background: #0e2944;
+  color: #edf5ff;
+}
+
+.sidebar-option.active,
+.nav-item.active {
+  background: #0e2944;
+  color: #edf5ff;
+}
+
+.nav-item {
+  display: block;
+  padding: 10px 12px;
+  margin-bottom: 3px;
+  font-size: 14px;
+}
+
+.filter-placeholder {
+  margin: 0 4px 8px;
+  padding: 10px 12px;
+  border: 1px solid #214c73;
+  border-radius: 7px;
+  color: #7f9ab5;
+  background: #0b2138;
+  font-size: 13px;
+}
+
+/* =========================
+   MAIN CONTENT
+   ========================= */
+
+.main-content {
+  width: calc(100% - 270px);
+  margin-left: 270px;
+  padding: 30px 34px 40px;
+}
+
+.top-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.top-header h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.top-header p {
+  margin: 7px 0 0;
+  color: #7f9ab5;
+  font-size: 14px;
+}
+
+.header-label {
+  color: #7f9ab5;
+  font-size: 12px;
+  padding-top: 6px;
+  white-space: nowrap;
+}
+
+/* =========================
+   TOP CONTROLS
+   ========================= */
+
+.top-controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.control {
+  min-width: 210px;
+}
+
+.control label {
+  display: block;
+  margin-bottom: 7px;
+  color: #7f9ab5;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.select-placeholder {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 13px;
+  border: 1px solid #214c73;
+  border-radius: 7px;
+  background: #0b2138;
+  color: #c7d8e8;
+  font-size: 13px;
+}
+
+/* =========================
+   DASHBOARD CARD
+   ========================= */
+
+.dashboard-card {
+  background: #0b2138;
+  border: 1px solid #173a5d;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 20px 22px;
+  border-bottom: 1px solid #173a5d;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.card-header p {
+  margin: 5px 0 0;
+  color: #7f9ab5;
+  font-size: 13px;
+}
+
+.empty-dashboard {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 40px;
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.empty-text {
+  margin-top: 8px;
+  color: #7f9ab5;
+  font-size: 13px;
+}
+
+/* =========================
+   SCROLLBAR
+   ========================= */
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #173a5d;
+  border-radius: 10px;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: 220px;
+  }
+
+  .main-content {
+    width: calc(100% - 220px);
+    margin-left: 220px;
+    padding: 24px;
+  }
+
+  .top-header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 700px) {
+  .sidebar {
+    position: relative;
+    width: 100%;
+    min-height: auto;
+  }
+
+  .app {
+    display: block;
+  }
+
+  .main-content {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .top-controls {
+    flex-direction: column;
+  }
+}
