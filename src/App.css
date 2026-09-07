@@ -293,3 +293,264 @@ select {
     flex-direction: column;
   }
 }
+
+/* ================================
+   Dashboard Pages
+================================ */
+
+.page-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.page-section-title h2 {
+  margin: 0;
+  color: #edf5ff;
+  font-size: 22px;
+}
+
+.page-section-title p {
+  margin: 5px 0 0;
+  color: #7f9ab5;
+  font-size: 13px;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.overview-top {
+  grid-template-columns: 1.2fr 1fr;
+}
+
+.overview-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ppm-top {
+  grid-template-columns: 1fr 1fr;
+}
+
+.dashboard-page,
+.overview-page {
+  width: 100%;
+}
+
+.dashboard-page .dashboard-card,
+.overview-page .dashboard-card {
+  min-width: 0;
+}
+
+.card-header h3 {
+  margin: 0;
+  color: #edf5ff;
+  font-size: 15px;
+}
+
+.card-header p {
+  margin: 5px 0 0;
+  color: #7f9ab5;
+  font-size: 12px;
+}
+
+.metric-badge {
+  padding: 7px 11px;
+  border: 1px solid #214c73;
+  border-radius: 6px;
+  color: #c7d8e8;
+  background: #0e2944;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.kpi-card {
+  min-height: 95px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.kpi-card span {
+  color: #7f9ab5;
+  font-size: 12px;
+}
+
+.kpi-card strong {
+  color: #edf5ff;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.sidebar-filter {
+  margin-bottom: 10px;
+}
+
+.sidebar-filter label {
+  display: block;
+  margin-bottom: 5px;
+  color: #7f9ab5;
+  font-size: 11px;
+}
+
+.sidebar-filter select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.top-controls select,
+.sidebar-filter select,
+.date-controls input {
+  border: 1px solid #214c73;
+  border-radius: 5px;
+  background: #0b2138;
+  color: #edf5ff;
+  padding: 8px 9px;
+  font-size: 12px;
+  outline: none;
+}
+
+.top-controls select {
+  width: 100%;
+}
+
+.top-controls select:focus,
+.sidebar-filter select:focus,
+.date-controls input:focus {
+  border-color: #2f8cff;
+}
+
+.date-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-controls input {
+  min-width: 0;
+  flex: 1;
+}
+
+.date-controls span {
+  color: #7f9ab5;
+  font-size: 12px;
+}
+
+.uploaded-file-name {
+  margin-top: 8px;
+  padding: 7px 8px;
+  border-radius: 5px;
+  background: #0e2944;
+  border: 1px solid #173a5d;
+  color: #c7d8e8;
+  font-size: 10px;
+  word-break: break-word;
+}
+
+.data-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.quality-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.quality-table th {
+  background: #0e2944;
+  color: #edf5ff;
+  border-bottom: 1px solid #214c73;
+  padding: 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.quality-table td {
+  background: #0b2138;
+  color: #c7d8e8;
+  border-bottom: 1px solid #173a5d;
+  padding: 9px 10px;
+}
+
+.quality-table tr:hover td {
+  background: #0e2944;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.empty-state h2 {
+  color: #edf5ff;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: #7f9ab5;
+}
+
+/* Plotly container */
+
+.plotly-chart {
+  overflow: hidden;
+}
+
+.plotly-chart .js-plotly-plot,
+.plotly-chart .plot-container {
+  width: 100% !important;
+}
+
+/* Responsive */
+
+@media (max-width: 1200px) {
+  .overview-three {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .chart-grid,
+  .overview-top,
+  .overview-three,
+  .ppm-top {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-section-title {
+    align-items: flex-start;
+    gap: 10px;
+    flex-direction: column;
+  }
+
+  .date-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-controls span {
+    text-align: center;
+  }
+}

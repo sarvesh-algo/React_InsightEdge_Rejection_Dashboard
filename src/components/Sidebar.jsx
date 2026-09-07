@@ -7,8 +7,16 @@ function Sidebar({
   setDataSource,
   onFileUpload,
   uploadedFileName,
+  filters,
+  updateFilter,
+  locations,
+  processes,
+  machines,
+  parts,
+  defects,
 }) {
-  const fileInputRef = useRef(null)
+  const fileInputRef =
+    useRef(null)
 
   const navigationItems = [
     ['🏠', 'Overview'],
@@ -22,20 +30,51 @@ function Sidebar({
     ['📈', 'Trend Analysis'],
   ]
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0]
-
-    if (file) {
-      onFileUpload(file)
+  const handleUploadClick =
+    () => {
+      fileInputRef.current?.click()
     }
 
-    // Allows selecting the same file again later.
-    event.target.value = ''
-  }
+  const handleFileChange =
+    (event) => {
+      const file =
+        event.target.files?.[0]
+
+      if (file) {
+        onFileUpload(file)
+      }
+
+      event.target.value = ''
+    }
+
+  const renderFilter = (
+    label,
+    name,
+    values
+  ) => (
+    <div className="sidebar-filter">
+      <label>{label}</label>
+
+      <select
+        value={filters[name]}
+        onChange={(event) =>
+          updateFilter(
+            name,
+            event.target.value
+          )
+        }
+      >
+        {values.map((value) => (
+          <option
+            key={value}
+            value={value}
+          >
+            {value}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
 
   return (
     <aside className="sidebar">
@@ -56,12 +95,15 @@ function Sidebar({
 
         <button
           className={`sidebar-option ${
-            dataSource === 'Customer Complaints'
+            dataSource ===
+            'Customer Complaints'
               ? 'active'
               : ''
           }`}
           onClick={() =>
-            setDataSource('Customer Complaints')
+            setDataSource(
+              'Customer Complaints'
+            )
           }
         >
           Customer Complaints
@@ -69,12 +111,15 @@ function Sidebar({
 
         <button
           className={`sidebar-option ${
-            dataSource === 'Internal Rejection'
+            dataSource ===
+            'Internal Rejection'
               ? 'active'
               : ''
           }`}
           onClick={() =>
-            setDataSource('Internal Rejection')
+            setDataSource(
+              'Internal Rejection'
+            )
           }
         >
           Internal Rejection
@@ -86,7 +131,9 @@ function Sidebar({
               ? 'active'
               : ''
           }`}
-          onClick={handleUploadClick}
+          onClick={
+            handleUploadClick
+          }
         >
           Upload
         </button>
@@ -95,8 +142,12 @@ function Sidebar({
           ref={fileInputRef}
           type="file"
           accept=".csv,.xlsx,.xls"
-          onChange={handleFileChange}
-          style={{ display: 'none' }}
+          onChange={
+            handleFileChange
+          }
+          style={{
+            display: 'none',
+          }}
         />
 
         {uploadedFileName && (
@@ -111,21 +162,23 @@ function Sidebar({
           Navigation
         </div>
 
-        {navigationItems.map(([icon, page]) => (
-          <button
-            key={page}
-            className={`nav-item ${
-              activePage === page
-                ? 'active'
-                : ''
-            }`}
-            onClick={() =>
-              setActivePage(page)
-            }
-          >
-            {icon} {page}
-          </button>
-        ))}
+        {navigationItems.map(
+          ([icon, page]) => (
+            <button
+              key={page}
+              className={`nav-item ${
+                activePage === page
+                  ? 'active'
+                  : ''
+              }`}
+              onClick={() =>
+                setActivePage(page)
+              }
+            >
+              {icon} {page}
+            </button>
+          )
+        )}
       </div>
 
       <div className="sidebar-section">
@@ -133,21 +186,29 @@ function Sidebar({
           Dashboard Filters
         </div>
 
-        <div className="filter-placeholder">
-          Process
-        </div>
+        {renderFilter(
+          'Process',
+          'process',
+          processes
+        )}
 
-        <div className="filter-placeholder">
-          Machine
-        </div>
+        {renderFilter(
+          'Machine',
+          'machine',
+          machines
+        )}
 
-        <div className="filter-placeholder">
-          Part
-        </div>
+        {renderFilter(
+          'Part',
+          'part',
+          parts
+        )}
 
-        <div className="filter-placeholder">
-          Defect
-        </div>
+        {renderFilter(
+          'Defect',
+          'defect',
+          defects
+        )}
       </div>
     </aside>
   )
