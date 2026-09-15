@@ -1439,31 +1439,157 @@ function FilterMulti({
   selected,
   setSelected,
 }) {
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+
+  const filteredValues = values.filter((value) =>
+    value
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  const toggleValue = (value) => {
+    if (selected.includes(value)) {
+      setSelected(
+        selected.filter((x) => x !== value)
+      );
+    } else {
+      setSelected([...selected, value]);
+    }
+  };
+
+  const selectAll = () => {
+    setSelected(values);
+  };
+
+  const clearAll = () => {
+    setSelected([]);
+  };
+
+  const displayText =
+    selected.length === 0
+      ? `All ${label}s`
+      : selected.length === 1
+      ? selected[0]
+      : `${selected.length} selected`;
+
   return (
-    <div className="filter-block">
+    <div className="filter-block custom-dropdown">
       <label>{label}</label>
 
-      <select
-        multiple
-        value={selected}
-        onChange={(e) =>
-          setSelected(
-            [...e.target.selectedOptions].map(
-              (o) => o.value
-            )
-          )
-        }
+      <button
+        type="button"
+        className={`dropdown-trigger ${
+          open ? "open" : ""
+        }`}
+        onClick={() => setOpen(!open)}
       >
-        {values.map((v) => (
-          <option key={v} value={v}>
-            {v}
-          </option>
-        ))}
-      </select>
+        <span className="dropdown-value">
+          {displayText}
+        </span>
+
+        <span
+          className={`dropdown-arrow ${
+            open ? "rotated" : ""
+          }`}
+        >
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <div className="dropdown-menu">
+          <div className="dropdown-search">
+            <span>⌕</span>
+
+            <input
+              type="text"
+              placeholder={`Search ${label.toLowerCase()}...`}
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+              onClick={(e) =>
+                e.stopPropagation()
+              }
+            />
+          </div>
+
+          <div className="dropdown-actions">
+            <button
+              type="button"
+              onClick={selectAll}
+            >
+              Select All
+            </button>
+
+            <button
+              type="button"
+              onClick={clearAll}
+            >
+              Clear
+            </button>
+          </div>
+
+          <div className="dropdown-options">
+            {filteredValues.length === 0 ? (
+              <div className="no-options">
+                No matching {label.toLowerCase()}
+              </div>
+            ) : (
+              filteredValues.map((value) => {
+                const checked =
+                  selected.includes(value);
+
+                return (
+                  <button
+                    type="button"
+                    key={value}
+                    className={`dropdown-option ${
+                      checked ? "selected" : ""
+                    }`}
+                    onClick={() =>
+                      toggleValue(value)
+                    }
+                  >
+                    <span
+                      className={`checkbox ${
+                        checked ? "checked" : ""
+                      }`}
+                    >
+                      {checked ? "✓" : ""}
+                    </span>
+
+                    <span className="option-text">
+                      {value}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          <div className="dropdown-footer">
+            {selected.length === 0
+              ? `All ${label}s`
+              : `${selected.length} selected`}
+          </div>
+        </div>
+      )}
 
       {selected.length > 0 && (
-        <div className="selected-count">
-          {selected.length} selected
+        <div className="selected-preview">
+          {selected.slice(0, 2).map((value) => (
+            <span key={value}>
+              {value}
+            </span>
+          ))}
+
+          {selected.length > 2 && (
+            <span className="more-pill">
+              +{selected.length - 2}
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -1480,16 +1606,24 @@ function SelectControl({
     <div className="filter-block">
       <label>{label}</label>
 
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map((x) => (
-          <option key={x} value={x}>
-            {x}
-          </option>
-        ))}
-      </select>
+      <div className="single-select">
+        <select
+          value={value}
+          onChange={(e) =>
+            onChange(e.target.value)
+          }
+        >
+          {options.map((x) => (
+            <option key={x} value={x}>
+              {x}
+            </option>
+          ))}
+        </select>
+
+        <span className="single-select-arrow">
+          ▾
+        </span>
+      </div>
     </div>
   );
 }
