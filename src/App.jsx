@@ -48,7 +48,6 @@ const PAGES = [
   ["⚙️", "Process Analysis"],
   ["🏭", "Machine Analysis"],
   ["💰", "Cost Analysis"],
-  ["📈", "Trend Analysis"],
 ];
 
 /* =========================================================
@@ -529,25 +528,22 @@ function plotLayout(title, xTitle = "", yTitle = "", height = 280) {
   };
 }
 
-function PlotCard({ data, layout }) {
+function PlotCard({ data, layout, scrollable = false, minWidth = 0 }) {
   return (
-    <div className="plot-card">
-      <Plot
-        data={data}
-        layout={layout}
-        config={{
-          responsive: true,
-          displaylogo: false,
-          modeBarButtonsToRemove: [
-            "lasso2d",
-            "select2d",
-          ],
-        }}
-        style={{
-          width: "100%",
-        }}
-        useResizeHandler
-      />
+    <div className={`plot-card ${scrollable ? "plot-scroll" : ""}`}>
+      <div className="plot-inner" style={minWidth ? { minWidth: `${minWidth}px` } : undefined}>
+        <Plot
+          data={data}
+          layout={layout}
+          config={{
+            responsive: true,
+            displaylogo: false,
+            modeBarButtonsToRemove: ["lasso2d", "select2d"],
+          }}
+          style={{ width: "100%" }}
+          useResizeHandler
+        />
+      </div>
     </div>
   );
 }
@@ -673,13 +669,13 @@ function HorizontalBar({
             "%{y}<br>%{x:,.0f}<extra></extra>",
         },
       ]}
-      layout={plotLayout(
-        title,
-        valueField === "total_cost"
-          ? "₹ Cost"
-          : "Rejection Qty",
-        ""
-      )}
+      layout={{
+        ...plotLayout(title, valueField === "total_cost" ? "₹ Cost" : "Rejection Qty", "", Math.max(280, Math.min(430, 210 + data.length * 12))),
+        margin: { l: 125, r: 45, t: 44, b: 46 },
+        yaxis: { ...plotLayout(title).yaxis, automargin: true },
+      }}
+      scrollable
+      minWidth={data.length > 8 ? 560 : 500}
     />
   );
 }
@@ -844,7 +840,9 @@ function ParetoChart({
         xaxis: {
           ...plotLayout(title).xaxis,
           tickangle: -45,
+          automargin: true,
         },
+        margin: { l: 55, r: 55, t: 44, b: 88 },
         shapes: [
           {
             type: "line",
@@ -861,6 +859,8 @@ function ParetoChart({
           },
         ],
       }}
+      scrollable
+      minWidth={Math.max(560, data.length * 82)}
     />
   );
 }
@@ -1639,17 +1639,24 @@ function Header({
 }) {
   const locations = uniqueValues(rows, "location");
 
-  const minDate = rows.length
-    ? new Date(
-        Math.min(...rows.map((r) => r.Date.getTime()))
-      )
-    : new Date();
+  const timestamps = rows
+  .map((r) => r.Date?.getTime())
+  .filter(Number.isFinite);
 
-  const maxDate = rows.length
-    ? new Date(
-        Math.max(...rows.map((r) => r.Date.getTime()))
-      )
-    : new Date();
+const minTimestamp = timestamps.length
+  ? timestamps.reduce((min, value) =>
+      value < min ? value : min
+    )
+  : Date.now();
+
+const maxTimestamp = timestamps.length
+  ? timestamps.reduce((max, value) =>
+      value > max ? value : max
+    )
+  : Date.now();
+
+const minDate = new Date(minTimestamp);
+const maxDate = new Date(maxTimestamp);
 
   return (
     <>
@@ -1816,6 +1823,88 @@ function KPIStrip({ rows, baseline }) {
    PAGES
 ========================================================= */
 
+
+function DataTable({ rows = [], height = 420 }) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return (
+      <div className="table-wrapper">
+        <div className="empty-table">No data available.</div>
+      </div>
+    );
+  }
+
+  const columns = Object.keys(rows[0]);
+
+  const formatValue = (value) => {
+    if (value === null || value === undefined || value === "") return "—";
+
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime())
+        ? "—"
+        : value.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+    }
+
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) return "—";
+      return value.toLocaleString("en-IN", {
+        maximumFractionDigits: 2,
+      });
+    }
+
+    if (Array.isArray(value)) return value.join(", ");
+
+    if (value instanceof Set) return [...value].join(", ");
+
+    if (typeof value === "object") {
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    }
+
+    return String(value);
+  };
+
+  return (
+    <div
+      className="table-wrapper"
+      style={{
+        maxHeight: `${height}px`,
+        overflowX: "auto",
+        overflowY: "auto",
+      }}
+    >
+      <table>
+        <thead>
+          <tr>
+            {columns.map((column) => (
+              <th key={column}>{column}</th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {columns.map((column) => (
+                <td key={`${rowIndex}-${column}`}>
+                  {formatValue(row[column])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
 function Overview({ rows, internal }) {
   const monthly = monthlyTotals(rows);
 
@@ -1859,18 +1948,55 @@ function Overview({ rows, internal }) {
 
       {internal && (
         <div className="dashboard-card">
-          <div className="section-title">
-            Internal Rejection Summary
-          </div>
-          <div className="muted">
-            Internal Rejection source selected.
-          </div>
+          <div className="section-title">Internal Rejection Summary</div>
+          <div className="muted">Internal Rejection source selected.</div>
         </div>
       )}
+
+      <div className="section-title">Top 10 Parts by Rejection Quantity</div>
+      <DataTable rows={topPartsByRejection(rows, 10)} />
 
       <ControlChart rows={monthly} />
     </>
   );
+}
+
+function topPartsByRejection(rows, n = 10) {
+  const grouped = new Map();
+  rows.forEach((r) => {
+    if (!r.part_no_clean) return;
+    if (!grouped.has(r.part_no_clean)) grouped.set(r.part_no_clean, {
+      "Part No.": r.part_no_clean, "Part Description": r.part_name_clean || "—",
+      "Rejection Qty": 0, Location: new Set(),
+    });
+    const x = grouped.get(r.part_no_clean);
+    x["Rejection Qty"] += number(r["rejection quantity"]);
+    if (r.location) x.Location.add(r.location);
+  });
+  return [...grouped.values()].map((x) => ({ ...x, Location: [...x.Location].join(", ") }))
+    .sort((a,b) => b["Rejection Qty"] - a["Rejection Qty"]).slice(0,n);
+}
+
+function topPartsByPPM(rows, n = 10) {
+  const grouped = new Map();
+  rows.forEach((r) => {
+    if (!r.part_no_clean) return;
+    if (!grouped.has(r.part_no_clean)) grouped.set(r.part_no_clean, {
+      part_no_clean: r.part_no_clean,
+      part_name_clean: r.part_name_clean || "—",
+      rejection_quantity: 0,
+      ppm_denominator: 0,
+      locations: new Set(),
+    });
+    const x = grouped.get(r.part_no_clean);
+    x.rejection_quantity += number(r["rejection quantity"]);
+    x.ppm_denominator += number(r.ppm_denominator);
+    if (r.location) x.locations.add(r.location);
+  });
+  return [...grouped.values()]
+    .map((x) => ({ ...x, location: [...x.locations].join(", "), ppm: x.ppm_denominator > 0 ? x.rejection_quantity * 1000000 / x.ppm_denominator : 0 }))
+    .sort((a,b) => b.ppm - a.ppm)
+    .slice(0,n);
 }
 
 function PPMDashboard({
@@ -1897,11 +2023,17 @@ function PPMDashboard({
   );
 
   const best = valid.length
-    ? Math.min(...valid.map((x) => x.ppm))
+    ? valid.reduce(
+        (min, x) => (x.ppm < min ? x.ppm : min),
+        valid[0].ppm
+      )
     : 0;
 
   const worst = valid.length
-    ? Math.max(...valid.map((x) => x.ppm))
+    ? valid.reduce(
+        (max, x) => (x.ppm > max ? x.ppm : max),
+        valid[0].ppm
+      )
     : 0;
 
   const ytd =
@@ -2016,13 +2148,8 @@ function PPMDashboard({
         />
       </div>
 
-      <div className="ppm-gauge-alerts">
-        <PPMGauge value={overall} />
-
-        <div className="dashboard-card">
-          <div className="section-title">
-            PPM Alerts
-          </div>
+      <div className="dashboard-card ppm-alerts-full">
+        <div className="section-title">PPM Alerts</div>
 
           {overall > TARGET_PPM && (
             <AlertItem
@@ -2084,23 +2211,16 @@ function PPMDashboard({
                 />
               </>
             )}
-        </div>
       </div>
 
-      <div className="section-title">
-        Top 10 Parts by PPM
-      </div>
-
+      <div className="section-title">Top 10 Parts by PPM</div>
       <DataTable
-        rows={topParts.map((x) => ({
+        rows={topPartsByPPM(rows, 10).map((x) => ({
           "Part No.": x.part_no_clean,
+          "Part Description": x.part_name_clean,
+          "Rejection Qty": Math.round(x.rejection_quantity),
+          Location: x.location || "—",
           PPM: Math.round(x.ppm),
-          "Rejection Qty": Math.round(
-            x.rejection_quantity
-          ),
-          Denominator: Math.round(
-            x.ppm_denominator
-          ),
         }))}
       />
 
@@ -2108,20 +2228,6 @@ function PPMDashboard({
         <PPMPartLines rows={rows} />
         <ProductionVsPPM rows={rows} />
       </div>
-
-      {compareParts.length > 0 && (
-        <div className="dashboard-card">
-          <div className="section-title">
-            Selected Part Comparison
-          </div>
-
-          <div className="compare-pills">
-            {compareParts.map((p) => (
-              <span key={p}>{p}</span>
-            ))}
-          </div>
-        </div>
-      )}
 
       {ppmSingle !== "All" && (
         <div className="small-muted">
@@ -2186,139 +2292,118 @@ function AlertItem({ icon, text }) {
   );
 }
 
+
+function monthlyPartTrend(rows, topN = 15) {
+  if (!Array.isArray(rows) || rows.length === 0) return [];
+
+  // First determine the top parts by total rejection quantity
+  // over the currently selected/filterable period.
+  const totals = new Map();
+
+  rows.forEach((r) => {
+    const part = String(r?.part_name_clean ?? "").trim();
+    const qty = number(r?.["rejection quantity"]);
+
+    if (!part || !Number.isFinite(qty) || qty <= 0) return;
+
+    totals.set(part, (totals.get(part) || 0) + qty);
+  });
+
+  const topParts = [...totals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([part]) => part);
+
+  if (!topParts.length) return [];
+
+  const allowed = new Set(topParts);
+  const monthly = new Map();
+
+  rows.forEach((r) => {
+    const part = String(r?.part_name_clean ?? "").trim();
+    const month = String(r?.month_start ?? "").trim();
+    const qty = number(r?.["rejection quantity"]);
+
+    if (
+      !allowed.has(part) ||
+      !month ||
+      !Number.isFinite(qty)
+    ) {
+      return;
+    }
+
+    const key = `${month}|||${part}`;
+
+    if (!monthly.has(key)) {
+      monthly.set(key, {
+        month_start: month,
+        part_name_clean: part,
+        rejection_quantity: 0,
+      });
+    }
+
+    monthly.get(key).rejection_quantity += qty;
+  });
+
+  return [...monthly.values()].sort((a, b) => {
+    const monthCompare = a.month_start.localeCompare(b.month_start);
+    if (monthCompare !== 0) return monthCompare;
+    return a.part_name_clean.localeCompare(b.part_name_clean);
+  });
+}
+
+
 function PartAnalysis({ rows }) {
   return (
     <>
       <h2>Part Analysis</h2>
 
-      <div className="two-col">
-        <HorizontalBar
-          rows={rows}
-          field="part_name_clean"
-          title="Top 10 Rejection Parts"
-          n={10}
+      <HorizontalBar rows={rows} field="part_name_clean" title="Top 15 Rejection Parts" n={15} />
+
+      <div className="section-title">Top Rejection Parts · 6M Trend</div>
+      <div className="chart-scroll">
+        <LineChart
+          rows={monthlyPartTrend(rows, 15)}
+          xField="month_start"
+          yField="rejection_quantity"
+          groupField="part_name_clean"
+          title="Top Rejection Parts · 6M Trend"
         />
-
-        <PPMBar
-          rows={rows}
-          title="Top 10 Parts by PPM"
-        />
       </div>
 
-      <LineChart
-        rows={monthlyPartTrend(rows)}
-        xField="month_start"
-        yField="rejection_quantity"
-        groupField="part_name_clean"
-        title="Top Rejection Parts · 6M Trend"
-      />
+      <div className="section-title">Customer Complaints · Top 50 Parts</div>
+      <div className="small-muted">Tables update with the selected date range and active filters.</div>
 
-      <div className="section-title">
-        Customer Complaints · Top 50 Parts
-      </div>
+      <div className="section-title">1. Top 50 Parts with Highest Rejection Occurrences</div>
+      <DataTable rows={monthlyRejectionTable(rows, "occurrence")} height={520} />
 
-      <div className="small-muted">
-        Tables update with the selected date range
-        and active filters.
-      </div>
-
-      <div className="section-title">
-        1. Top 50 Parts with Highest Rejection
-        Occurrences
-      </div>
-
-      <DataTable
-        rows={customerComplaintTable(rows, "occurrence")}
-        height={520}
-      />
-
-      <div className="section-title">
-        2. Top 50 Parts with Highest Rejection
-        Quantities
-      </div>
-
-      <DataTable
-        rows={customerComplaintTable(rows, "quantity")}
-        height={520}
-      />
+      <div className="section-title">2. Top 50 Parts with Highest Rejection Quantities</div>
+      <DataTable rows={monthlyRejectionTable(rows, "quantity")} height={520} />
     </>
   );
 }
 
-function monthlyPartTrend(rows) {
+function monthlyRejectionTable(rows, ranking) {
   const grouped = new Map();
-
   rows.forEach((r) => {
-    const key = `${r.month_start}|||${r.part_name_clean}`;
-
-    if (!r.month_start || !r.part_name_clean)
-      return;
-
-    grouped.set(key, {
-      month_start: r.month_start,
-      part_name_clean: r.part_name_clean,
-      rejection_quantity:
-        (grouped.get(key)?.rejection_quantity || 0) +
-        r["rejection quantity"],
+    if (!r.part_no_clean || !r.month_start || number(r["rejection quantity"]) <= 0) return;
+    if (!grouped.has(r.part_no_clean)) grouped.set(r.part_no_clean, {
+      "Part No.": r.part_no_clean, "Part Description": r.part_name_clean || "—", occurrences: 0, total: 0, months: {},
     });
-  });
-
-  return [...grouped.values()];
-}
-
-function customerComplaintTable(rows, ranking) {
-  const grouped = new Map();
-
-  rows.forEach((r) => {
-    if (!r.part_no_clean) return;
-    if (r["rejection quantity"] <= 0) return;
-
-    if (!grouped.has(r.part_no_clean)) {
-      grouped.set(r.part_no_clean, {
-        "Part No.": r.part_no_clean,
-        "Total rejection occurrences": 0,
-        "Total rejection quantity": 0,
-        "Total rejection cost": 0,
-        Defects: new Set(),
-        Processes: new Set(),
-        "Location(s)": new Set(),
-      });
-    }
-
     const x = grouped.get(r.part_no_clean);
-
-    x["Total rejection occurrences"] += 1;
-    x["Total rejection quantity"] +=
-      r["rejection quantity"];
-    x["Total rejection cost"] += r.total_cost;
-
-    if (r.defect) x.Defects.add(r.defect);
-    if (r.process) x.Processes.add(r.process);
-    if (r.location) x["Location(s)"].add(r.location);
+    x.occurrences += 1;
+    x.total += number(r["rejection quantity"]);
+    x.months[r.month_start] = (x.months[r.month_start] || 0) + number(r["rejection quantity"]);
   });
-
-  let data = [...grouped.values()].map((x) => ({
-    ...x,
-    Defects: [...x.Defects].join(", "),
-    Processes: [...x.Processes].join(", "),
-    "Location(s)": [...x["Location(s)"]].join(
-      ", "
-    ),
-  }));
-
-  data.sort((a, b) =>
-    ranking === "occurrence"
-      ? b["Total rejection occurrences"] -
-          a["Total rejection occurrences"] ||
-        b["Total rejection quantity"] -
-          a["Total rejection quantity"]
-      : b["Total rejection quantity"] -
-          a["Total rejection quantity"] ||
-        b["Total rejection occurrences"] -
-          a["Total rejection occurrences"]
-  );
-
-  return data.slice(0, 50);
+  const months = [...new Set(rows.map((r) => r.month_start).filter(Boolean))].sort();
+  return [...grouped.values()]
+    .sort((a,b) => ranking === "occurrence" ? (b.occurrences-a.occurrences || b.total-a.total) : (b.total-a.total || b.occurrences-a.occurrences))
+    .slice(0,50).map((x) => {
+      const result = { "Part No.": x["Part No."], "Part Description": x["Part Description"] };
+      months.forEach((m) => { result[monthLabel(m)] = Math.round(x.months[m] || 0); });
+      result["Total Rejection Qty"] = Math.round(x.total);
+      return result;
+    });
 }
 
 function DefectAnalysis({ rows }) {
@@ -2486,220 +2571,6 @@ function CostAnalysis({ rows }) {
   );
 }
 
-function TrendAnalysis({ rows }) {
-  const monthly = monthlyTotals(rows);
-
-  const locationMonthly = monthlySummary(rows);
-
-  return (
-    <>
-      <h2>Trend Analysis</h2>
-
-      <div className="two-col">
-        <LineChart
-          rows={monthly}
-          xField="month_start"
-          yField="rejection_quantity"
-          title="Monthly Rejection Trend"
-        />
-
-        <PPMTrend
-          rows={monthly}
-          title="Monthly PPM Trend"
-        />
-      </div>
-
-      <SegmentedShare rows={locationMonthly} />
-    </>
-  );
-}
-
-function SegmentedShare({ rows }) {
-  const months = [
-    ...new Set(rows.map((x) => x.month_start)),
-  ].sort();
-
-  const locations = [
-    ...new Set(rows.map((x) => x.location)),
-  ];
-
-  return (
-    <PlotCard
-      data={locations.map((location, i) => ({
-        type: "bar",
-        name: location,
-        x: months,
-        y: months.map((month) => {
-          const total = rows
-            .filter((x) => x.month_start === month)
-            .reduce(
-              (a, x) =>
-                a + x.rejection_quantity,
-              0
-            );
-
-          const value = rows
-            .filter(
-              (x) =>
-                x.month_start === month &&
-                x.location === location
-            )
-            .reduce(
-              (a, x) =>
-                a + x.rejection_quantity,
-              0
-            );
-
-          return total ? (value / total) * 100 : 0;
-        }),
-        marker: {
-          color:
-            LOCATION_COLORS[location] ||
-            PALETTE[i % PALETTE.length],
-        },
-        text: months.map((month) => {
-          const total = rows
-            .filter((x) => x.month_start === month)
-            .reduce(
-              (a, x) =>
-                a + x.rejection_quantity,
-              0
-            );
-
-          const value = rows
-            .filter(
-              (x) =>
-                x.month_start === month &&
-                x.location === location
-            )
-            .reduce(
-              (a, x) =>
-                a + x.rejection_quantity,
-              0
-            );
-
-          const share = total
-            ? (value / total) * 100
-            : 0;
-
-          return share >= 8
-            ? `${Math.round(share)}%`
-            : "";
-        }),
-        textposition: "inside",
-      }))}
-      layout={{
-        ...plotLayout(
-          "Monthly Location Contribution %",
-          "Month",
-          "Share"
-        ),
-        barmode: "stack",
-        yaxis: {
-          ...plotLayout().yaxis,
-          range: [0, 100],
-          ticksuffix: "%",
-        },
-      }}
-    />
-  );
-}
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-function DataTable({ rows, height = 360 }) {
-  if (!rows.length) {
-    return (
-      <div className="empty-table">
-        No data available for the selected filters.
-      </div>
-    );
-  }
-
-  const columns = Object.keys(rows[0]);
-
-  return (
-    <div
-      className="table-wrapper"
-      style={{ maxHeight: height }}
-    >
-      <table>
-        <thead>
-          <tr>
-            {columns.map((c) => (
-              <th key={c}>{c}</th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={i}>
-              {columns.map((c) => (
-                <td key={c}>
-                  {typeof row[c] === "number"
-                    ? row[c].toLocaleString(
-                        undefined,
-                        {
-                          maximumFractionDigits: 2,
-                        }
-                      )
-                    : String(row[c] ?? "")}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function DetailTable({ rows }) {
-  const fields = [
-    "Date",
-    "location",
-    "process",
-    "machine",
-    "part_no_clean",
-    "part_name_clean",
-    "defect",
-    "rejection quantity",
-    "production quantity",
-    "ppm_denominator",
-    "total_cost",
-    "safe_ppm",
-  ];
-
-  const available = fields.filter((x) =>
-    rows.some((r) => x in r)
-  );
-
-  const sorted = [...rows].sort(
-    (a, b) => b.Date - a.Date
-  );
-
-  return (
-    <DataTable
-      rows={sorted.map((r) => {
-        const x = {};
-
-        available.forEach((f) => {
-          x[f] =
-            f === "Date"
-              ? formatDate(r[f])
-              : r[f];
-        });
-
-        return x;
-      })}
-      height={280}
-    />
-  );
-}
-
 /* =========================================================
    UTILITIES
 ========================================================= */
@@ -2770,20 +2641,26 @@ export default function App() {
     setUploaded(true);
 
     if (parsed.length) {
-      const min = new Date(
-        Math.min(
-          ...parsed.map((r) => r.Date.getTime())
-        )
-      );
+      const timestamps = parsed
+  .map((r) => r.Date?.getTime())
+  .filter(Number.isFinite);
 
-      const max = new Date(
-        Math.max(
-          ...parsed.map((r) => r.Date.getTime())
-        )
-      );
+if (timestamps.length) {
+  const minTimestamp = timestamps.reduce(
+    (min, value) => Math.min(min, value),
+    timestamps[0]
+  );
 
-      setStartDate(toInputDate(min));
-      setEndDate(toInputDate(max));
+  const maxTimestamp = timestamps.reduce(
+    (max, value) => Math.max(max, value),
+    timestamps[0]
+  );
+
+  setStartDate(toInputDate(new Date(minTimestamp)));
+  setEndDate(toInputDate(new Date(maxTimestamp)));
+}
+
+     
     }
 
     setLocation("All");
@@ -3008,21 +2885,6 @@ export default function App() {
                   />
                 )}
 
-                {page === "Trend Analysis" && (
-                  <TrendAnalysis
-                    rows={filteredRows}
-                  />
-                )}
-
-                <details className="records-expander">
-                  <summary>
-                    View filtered complaint records
-                  </summary>
-
-                  <DetailTable
-                    rows={filteredRows}
-                  />
-                </details>
               </>
             )}
           </>

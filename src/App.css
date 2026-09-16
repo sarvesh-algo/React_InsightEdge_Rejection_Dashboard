@@ -1467,3 +1467,19 @@ tbody tr:hover td {
 
   font-size: 11px;
 }
+
+/* =====================================================
+   CHART READABILITY / SPACING
+===================================================== */
+.plot-card { min-width: 0; }
+.plot-scroll { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: #214c73 #081a2d; }
+.plot-scroll::-webkit-scrollbar { height: 6px; }
+.plot-scroll::-webkit-scrollbar-track { background: #081a2d; }
+.plot-scroll::-webkit-scrollbar-thumb { background: #214c73; border-radius: 6px; }
+.plot-inner { width: 100%; }
+.two-col, .three-col { column-gap: 18px; row-gap: 22px; margin-bottom: 22px; }
+.two-col + .section-title, .three-col + .section-title { margin-top: 8px; }
+.section-title { margin-top: 16px; }
+.table-wrapper { margin-bottom: 22px; }
+.ppm-alerts-full { margin-bottom: 22px; }
+@media (max-width: 900px) { .two-col, .three-col { row-gap: 18px; } }
