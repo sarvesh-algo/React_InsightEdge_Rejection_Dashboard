@@ -2371,7 +2371,6 @@ function PartAnalysis({ rows }) {
         />
       </div>
 
-      <div className="section-title">Customer Complaints · Top 50 Parts</div>
       <div className="small-muted">Tables update with the selected date range and active filters.</div>
 
       <div className="section-title">1. Top 50 Parts with Highest Rejection Occurrences</div>
@@ -2395,7 +2394,13 @@ function monthlyRejectionTable(rows, ranking) {
     x.total += number(r["rejection quantity"]);
     x.months[r.month_start] = (x.months[r.month_start] || 0) + number(r["rejection quantity"]);
   });
-  const months = [...new Set(rows.map((r) => r.month_start).filter(Boolean))].sort();
+  const months = [
+    ...new Set(
+      rows
+        .map((r) => r.month_start)
+        .filter((m) => /^\d{4}-\d{2}-01$/.test(String(m)))
+    ),
+  ].sort();
   return [...grouped.values()]
     .sort((a,b) => ranking === "occurrence" ? (b.occurrences-a.occurrences || b.total-a.total) : (b.total-a.total || b.occurrences-a.occurrences))
     .slice(0,50).map((x) => {
